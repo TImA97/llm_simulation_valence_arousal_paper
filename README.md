@@ -8,7 +8,6 @@ This repository contains the code and simulation results for
 - Preregistration (original): https://osf.io/8e6gf
 - Preregistration (revision, additional analyses): https://osf.io/28ja9/
 - ADEMP template for LLM simulation studies: https://github.com/TImA97/ADEMP-PreReg-for-LLMs
-- Archived version of this repository: https://doi.org/10.5281/zenodo.XXXXXXX
 
 ## Repository structure
 
