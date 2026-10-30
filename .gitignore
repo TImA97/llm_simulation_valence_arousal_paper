@@ -48,3 +48,23 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+
+# ---- project-specific ----
+
+# temporary simulation output (intermediate results and seed files)
+**/sim_results/tmp/
+
+# generated figures (not included in the repository);
+# other PDFs (preprint, supplementary materials) are included
+llm_simulation_valence_arousal/sim_results/*.pdf
+
+# external data without redistribution license (download from OSF, see README)
+# Martínez et al. (2024): stimuli and human ratings
+*.xlsx
+# Schmidt & Heck (2024): pilot study material
+pilot_study/study_3_statements-statistics.csv
+pilot_study/mixed_models_item_filtered_study_3.RData
+
+# pilot simulation results (not included; re-run the pilot simulation, see README)
+pilot_study/sim_results/
