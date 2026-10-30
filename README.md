@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/1242366902.svg)](https://doi.org/10.5281/zenodo.23762870)
+[![DOI](https://zenodo.org/badge/1438274769.svg)](https://doi.org/10.5281/zenodo.23810473)
 
 # Evaluating Ratings from Large Language Models: Analysis Code and Data
 
