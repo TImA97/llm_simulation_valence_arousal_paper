@@ -1,0 +1,304 @@
+
+R version 4.6.0 (2026-04-24) -- "Because it was There"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## recommendation: run script as Batch job
+> ## systemd-inhibit R CMD BATCH --vanilla temperature_simulation.R sim_results/sim_results_documentation_temperature_analysis.Rout
+> 
+> ## load packages ##
+> ###################
+> ## automate LLM usage
+> library(ellmer)
+> 
+> ## packages for data loading
+> library(readxl)
+> 
+> ## package for displaying progress bar of the simulation
+> library(utils)
+> 
+> ## data analysis
+> library(tidyverse)
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.1     ✔ readr     2.2.0
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.3     ✔ tibble    3.3.1
+✔ lubridate 1.9.5     ✔ tidyr     1.3.2
+✔ purrr     1.2.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> 
+> ## load simulation code
+> source("simulation_code.R")
+> 
+> ## create directory for storing results (if it does not yet exist)
+> dir.create("sim_results/")
+Warning message:
+In dir.create("sim_results/") : 'sim_results' already exists
+> dir.create("sim_results/tmp/")
+Warning message:
+In dir.create("sim_results/tmp/") : 'sim_results/tmp' already exists
+> 
+> ## document session information
+> sessionInfo()
+R version 4.6.0 (2026-04-24)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 24.04.5 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=de_DE.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=de_DE.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=de_DE.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/Berlin
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] lubridate_1.9.5 forcats_1.0.1   stringr_1.6.0   dplyr_1.2.1    
+ [5] purrr_1.2.2     readr_2.2.0     tidyr_1.3.2     tibble_3.3.1   
+ [9] ggplot2_4.0.3   tidyverse_2.0.0 readxl_1.4.5    ellmer_0.4.0   
+
+loaded via a namespace (and not attached):
+ [1] gtable_0.3.6       compiler_4.6.0     tidyselect_1.2.1   scales_1.4.0      
+ [5] R6_2.6.1           generics_0.1.4     httr2_1.2.2        pillar_1.11.1     
+ [9] RColorBrewer_1.1-3 tzdb_0.5.0         rlang_1.2.0        stringi_1.8.7     
+[13] S7_0.2.2           otel_0.2.0         timechange_0.4.0   cli_3.6.6         
+[17] withr_3.0.2        magrittr_2.0.5     grid_4.6.0         rstudioapi_0.18.0 
+[21] rappdirs_0.3.4     hms_1.1.4          lifecycle_1.0.5    coro_1.1.0        
+[25] vctrs_0.7.3        glue_1.8.1         farver_2.1.2       cellranger_1.1.0  
+[29] tools_4.6.0        pkgconfig_2.0.3   
+> 
+> set.seed(582358926)
+> 
+> 
+> ## read statements to be rated ##
+> #################################
+> 
+> ## check that files exist
+> file_names <- c(
++   "96_selected_stimuli_human_validation_valence.xlsx",
++   "96_selected_stimuli_human_validation_arousal.xlsx"
++ )
+> 
+> if (!all(file.exists(file_names))) {
++   stop("To run all analyses, you need to download the files from the following links: https://osf.io/k5a4x/files/qp2u8 and https://osf.io/k5a4x/files/kuz5s")
++ }
+> 
+> ## valence ##
+> ##---------##
+> 
+> valence_statements <- read_excel("96_selected_stimuli_human_validation_valence.xlsx")
+> valence_statements <- valence_statements[, "Word"]
+> names(valence_statements) <- "statement"
+> valence_statements$stimulus_id <- 1:nrow(valence_statements)
+> valence_statements
+# A tibble: 96 × 2
+   statement             stimulus_id
+   <chr>                       <int>
+ 1 hit rock bottom                 1
+ 2 drug addict                     2
+ 3 death penalty                   3
+ 4 jail cell                       4
+ 5 violent storm                   5
+ 6 give up hope                    6
+ 7 piece of crap                   7
+ 8 life sentence                   8
+ 9 racial discrimination           9
+10 trash dump                     10
+# ℹ 86 more rows
+> 
+> 
+> ## define parameters of prompt design ##
+> ########################################
+> 
+> ## valence ##
+> ##---------##
+> 
+> prompt_params_valence <- list(
++   system_prompts = "",
++   example = c(
++     "",
++     "Examples of words that would get a rating of {scale_min} are pedophile, AIDS, and wreck.",
++     "Examples of words that would get a rating of {scale_max} are vacation, fantastic, and laugh.",
++     "Examples of words that would get a rating of {scale_min} are pedophile, AIDS, and wreck. Examples of words that would get a rating of {scale_max} are vacation, fantastic, and laugh."
++   )
++ )
+> 
+> prompt_params_valence$expressions <- valence_statements
+> 
+> 
+> ## define models used for the rating task ##
+> ############################################
+> 
+> models <- c(
++   "llama3.1:8b",
++   "phi3:3.8b", "phi3:14b", "phi4:14b"
++ )
+> 
+> 
+> ## execute simulation ##
+> ########################
+> 
+> # identical for both simulations
+> iterations <- 20
+> design <- expand.grid(
++   system_prompt = 1,
++   format = 1:2,
++   example = 1:4,
++   models = models,
++   scale_min = NA,
++   scale_max = NA
++ )
+> 
+> design$scale_min <- ifelse(design$format == 1, 0, 1)
+> design$scale_max <- ifelse(design$format == 1, 100, 9)
+> 
+> design
+   system_prompt format example      models scale_min scale_max
+1              1      1       1 llama3.1:8b         0       100
+2              1      2       1 llama3.1:8b         1         9
+3              1      1       2 llama3.1:8b         0       100
+4              1      2       2 llama3.1:8b         1         9
+5              1      1       3 llama3.1:8b         0       100
+6              1      2       3 llama3.1:8b         1         9
+7              1      1       4 llama3.1:8b         0       100
+8              1      2       4 llama3.1:8b         1         9
+9              1      1       1   phi3:3.8b         0       100
+10             1      2       1   phi3:3.8b         1         9
+11             1      1       2   phi3:3.8b         0       100
+12             1      2       2   phi3:3.8b         1         9
+13             1      1       3   phi3:3.8b         0       100
+14             1      2       3   phi3:3.8b         1         9
+15             1      1       4   phi3:3.8b         0       100
+16             1      2       4   phi3:3.8b         1         9
+17             1      1       1    phi3:14b         0       100
+18             1      2       1    phi3:14b         1         9
+19             1      1       2    phi3:14b         0       100
+20             1      2       2    phi3:14b         1         9
+21             1      1       3    phi3:14b         0       100
+22             1      2       3    phi3:14b         1         9
+23             1      1       4    phi3:14b         0       100
+24             1      2       4    phi3:14b         1         9
+25             1      1       1    phi4:14b         0       100
+26             1      2       1    phi4:14b         1         9
+27             1      1       2    phi4:14b         0       100
+28             1      2       2    phi4:14b         1         9
+29             1      1       3    phi4:14b         0       100
+30             1      2       3    phi4:14b         1         9
+31             1      1       4    phi4:14b         0       100
+32             1      2       4    phi4:14b         1         9
+> design |> nrow()
+[1] 32
+> 
+> 
+> ## valence ##
+> ##---------##
+> 
+> ## run simulation
+> sim_results_valence_tmp_default <- do_llm_simulation(
++   design,
++   iterations,
++   prompt_params_valence,
++   construct = "valence",
++   fill_cols = c("scale_min", "scale_max"),
++   temperature = NULL
++ )
+
+
+> 
+> all_temperature_results_valence <- cbind(
++   temperature = rep(c("default", 0.8, 1), each = nrow(sim_results_valence_tmp_default)),
++   rbind(
++     sim_results_valence_tmp_default,
++     sim_results_valence_tmp_0_8,
++     sim_results_valence_tmp_1_0
++   )
++ )
+> 
+> entropy <- function(x) - sum(table(x)/sum(!is.na(x)) * log2(table(x)/sum(!is.na(x))))
+> #' standard error (se)
+> #'
+> #' @param x values for which to compute the standard error
+> #' @returns standard error of x
+> se <- function(x, na.rm = TRUE) {
++   sd(x, na.rm = na.rm) / sqrt(sum(!is.na(x)))
++ }
+> 
+> #' confidence interval (ci) that uses the \code{se} function
+> #'
+> #' @param x values for which to compute the confidence interval bounds
+> #' @returns two values in a vector with the first being the lower and the second
+> #' being the upper bound of the confidence interval for x
+> ci <- function(x) {
++   c(mean(x, na.rm = TRUE) - 1.96 * se(x), mean(x, na.rm = TRUE) + 1.96 * se(x))
++ }
+> 
+> entropy_stats <- all_temperature_results_valence |>
++   group_by(temperature, models, example, format, stimulus_id) |>
++   summarize(e = entropy(rating)) |>
++   group_by(temperature, models) |>
++   summarize(entropy = mean(e), ci_lb = ci(e)[1], ci_ub = ci(e)[2]) |>
++   arrange(models)
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by temperature, models, example, format, and
+  stimulus_id.
+ℹ Output is grouped by temperature, models, example, and format.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(temperature, models, example, format, stimulus_id))`
+  for per-operation grouping (`?dplyr::dplyr_by`) instead.
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by temperature and models.
+ℹ Output is grouped by temperature.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(temperature, models))` for per-operation grouping
+  (`?dplyr::dplyr_by`) instead.
+> entropy_stats
+# A tibble: 12 × 5
+# Groups:   temperature [3]
+   temperature models      entropy ci_lb ci_ub
+   <chr>       <fct>         <dbl> <dbl> <dbl>
+ 1 0.8         llama3.1:8b    2.58  2.52  2.63
+ 2 1           llama3.1:8b    2.79  2.74  2.85
+ 3 default     llama3.1:8b    2.79  2.74  2.85
+ 4 0.8         phi3:3.8b      1.42  1.38  1.47
+ 5 1           phi3:3.8b      1.70  1.66  1.75
+ 6 default     phi3:3.8b      1.70  1.65  1.75
+ 7 0.8         phi3:14b       1.51  1.46  1.56
+ 8 1           phi3:14b       1.81  1.76  1.86
+ 9 default     phi3:14b       1.80  1.74  1.85
+10 0.8         phi4:14b       1.44  1.38  1.49
+11 1           phi4:14b       1.67  1.62  1.73
+12 default     phi4:14b       1.67  1.61  1.73
+> 
+> ## conducting this simulation is analogous for the ratings of arousal but not presented
+> ## here due to the exemplary nature of this script
+> 
+> proc.time()
+     user    system   elapsed 
+40786.528    31.995 59265.294 

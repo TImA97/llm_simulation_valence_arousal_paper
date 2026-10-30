@@ -1,0 +1,269 @@
+
+R version 4.5.2 (2025-10-31) -- "[Not] Part in a Rumble"
+Copyright (C) 2025 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## recommendation: run script as Batch job
+> ## systemd-inhibit R CMD BATCH --vanilla run_simulations.R sim_results/sim_results_documentation.Rout
+> 
+> ## load packages ##
+> ###################
+> ## automate LLM usage
+> library(ellmer)
+> 
+> ## packages for data loading
+> library(readxl)
+> 
+> ## package for displaying progress bar of the simulation
+> library(utils)
+> 
+> ## load simulation code
+> source("simulation_code.R")
+> 
+> ## create directory for storing results (if it does not yet exist)
+> dir.create("sim_results/")
+Warning message:
+In dir.create("sim_results/") : 'sim_results' already exists
+> dir.create("sim_results/tmp/")
+Warning message:
+In dir.create("sim_results/tmp/") : 'sim_results/tmp' already exists
+> 
+> ## document session information
+> sessionInfo()
+R version 4.5.2 (2025-10-31)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 24.04.4 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=de_DE.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=de_DE.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=de_DE.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/Berlin
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] readxl_1.4.5 ellmer_0.4.0
+
+loaded via a namespace (and not attached):
+ [1] compiler_4.5.2   magrittr_2.0.4   R6_2.6.1         cli_3.6.5       
+ [5] otel_0.2.0       glue_1.8.0       httr2_1.2.2      rappdirs_0.3.4  
+ [9] cellranger_1.1.0 coro_1.1.0       S7_0.2.1         lifecycle_1.0.5 
+[13] rlang_1.1.7     
+> 
+> 
+> ## read statements to be rated ##
+> #################################
+> 
+> ## valence ##
+> ##---------##
+> 
+> valence_statements <- read_excel("96_selected_stimuli_human_validation_valence.xlsx")
+> valence_statements <- valence_statements[, "Word"]
+> names(valence_statements) <- "statement"
+> valence_statements$stimulus_id <- 1:nrow(valence_statements)
+> valence_statements
+# A tibble: 96 × 2
+   statement             stimulus_id
+   <chr>                       <int>
+ 1 hit rock bottom                 1
+ 2 drug addict                     2
+ 3 death penalty                   3
+ 4 jail cell                       4
+ 5 violent storm                   5
+ 6 give up hope                    6
+ 7 piece of crap                   7
+ 8 life sentence                   8
+ 9 racial discrimination           9
+10 trash dump                     10
+# ℹ 86 more rows
+> 
+> 
+> ## arousal ##
+> ##---------##
+> 
+> arousal_statements <- read_excel("96_selected_stimuli_human_validation_arousal.xlsx")
+> arousal_statements <- arousal_statements[, "Word"]
+> names(arousal_statements) <- "statement"
+> arousal_statements$stimulus_id <- 1:nrow(arousal_statements)
+> arousal_statements
+# A tibble: 96 × 2
+   statement         stimulus_id
+   <chr>                   <int>
+ 1 baby bib                    1
+ 2 normal stuff                2
+ 3 customer services           3
+ 4 water sprinkler             4
+ 5 one dollar bill             5
+ 6 jam jar                     6
+ 7 mop bucket                  7
+ 8 tomato sauce                8
+ 9 printing ink                9
+10 spare part                 10
+# ℹ 86 more rows
+> 
+> 
+> ## define parameters of prompt design ##
+> ########################################
+> 
+> ## valence ##
+> ##---------##
+> 
+> prompt_params_valence <- list(
++   system_prompts = "",
++   example = c(
++     "",
++     "Examples of words that would get a rating of {scale_min} are pedophile, AIDS, and wreck.",
++     "Examples of words that would get a rating of {scale_max} are vacation, fantastic, and laugh.",
++     "Examples of words that would get a rating of {scale_min} are pedophile, AIDS, and wreck. Examples of words that would get a rating of {scale_max} are vacation, fantastic, and laugh."
++   )
++ )
+> 
+> prompt_params_valence$expressions <- valence_statements
+> 
+> 
+> ## arousal ##
+> ##---------##
+> 
+> prompt_params_arousal <- list(
++   system_prompts = "",
++   example = c(
++     "",
++     "Examples of words that would get a rating of {scale_min} are grain, dull, and rest.",
++     "Examples of words that would get a rating of {scale_max} are gun, lover, and thrill.",
++     "Examples of words that would get a rating of {scale_min} are grain, dull, and rest. Examples of words that would get a rating of {scale_max} are gun, lover, and thrill."
++   )
++ )
+> 
+> prompt_params_arousal$expressions <- arousal_statements
+> 
+> 
+> ## define models used for the rating task ##
+> ############################################
+> 
+> models <- c(
++   "gemma3:4b", "gemma3:12b", "gemma3:27b",
++   "llama3.1:8b",
++   "phi3:3.8b", "phi3:14b", "phi4:14b",
++   "gpt-oss:20b"
++ )
+> 
+> 
+> ## execute simulation ##
+> ########################
+> 
+> # identical for both simulations
+> iterations <- 100
+> design <- expand.grid(
++   system_prompt = 1,
++   format = 1:2,
++   example = 1:4,
++   models = models,
++   scale_min = NA,
++   scale_max = NA
++ )
+> 
+> design$scale_min <- ifelse(design$format == 1, 0, 1)
+> design$scale_max <- ifelse(design$format == 1, 100, 9)
+> 
+> design
+   system_prompt format example      models scale_min scale_max
+1              1      1       1   gemma3:4b         0       100
+2              1      2       1   gemma3:4b         1         9
+3              1      1       2   gemma3:4b         0       100
+4              1      2       2   gemma3:4b         1         9
+5              1      1       3   gemma3:4b         0       100
+6              1      2       3   gemma3:4b         1         9
+7              1      1       4   gemma3:4b         0       100
+8              1      2       4   gemma3:4b         1         9
+9              1      1       1  gemma3:12b         0       100
+10             1      2       1  gemma3:12b         1         9
+11             1      1       2  gemma3:12b         0       100
+12             1      2       2  gemma3:12b         1         9
+13             1      1       3  gemma3:12b         0       100
+14             1      2       3  gemma3:12b         1         9
+15             1      1       4  gemma3:12b         0       100
+16             1      2       4  gemma3:12b         1         9
+17             1      1       1  gemma3:27b         0       100
+18             1      2       1  gemma3:27b         1         9
+19             1      1       2  gemma3:27b         0       100
+20             1      2       2  gemma3:27b         1         9
+21             1      1       3  gemma3:27b         0       100
+22             1      2       3  gemma3:27b         1         9
+23             1      1       4  gemma3:27b         0       100
+24             1      2       4  gemma3:27b         1         9
+25             1      1       1 llama3.1:8b         0       100
+26             1      2       1 llama3.1:8b         1         9
+27             1      1       2 llama3.1:8b         0       100
+28             1      2       2 llama3.1:8b         1         9
+29             1      1       3 llama3.1:8b         0       100
+30             1      2       3 llama3.1:8b         1         9
+31             1      1       4 llama3.1:8b         0       100
+32             1      2       4 llama3.1:8b         1         9
+33             1      1       1   phi3:3.8b         0       100
+34             1      2       1   phi3:3.8b         1         9
+35             1      1       2   phi3:3.8b         0       100
+36             1      2       2   phi3:3.8b         1         9
+37             1      1       3   phi3:3.8b         0       100
+38             1      2       3   phi3:3.8b         1         9
+39             1      1       4   phi3:3.8b         0       100
+40             1      2       4   phi3:3.8b         1         9
+41             1      1       1    phi3:14b         0       100
+42             1      2       1    phi3:14b         1         9
+43             1      1       2    phi3:14b         0       100
+44             1      2       2    phi3:14b         1         9
+45             1      1       3    phi3:14b         0       100
+46             1      2       3    phi3:14b         1         9
+47             1      1       4    phi3:14b         0       100
+48             1      2       4    phi3:14b         1         9
+49             1      1       1    phi4:14b         0       100
+50             1      2       1    phi4:14b         1         9
+51             1      1       2    phi4:14b         0       100
+52             1      2       2    phi4:14b         1         9
+53             1      1       3    phi4:14b         0       100
+54             1      2       3    phi4:14b         1         9
+55             1      1       4    phi4:14b         0       100
+56             1      2       4    phi4:14b         1         9
+57             1      1       1 gpt-oss:20b         0       100
+58             1      2       1 gpt-oss:20b         1         9
+59             1      1       2 gpt-oss:20b         0       100
+60             1      2       2 gpt-oss:20b         1         9
+61             1      1       3 gpt-oss:20b         0       100
+62             1      2       3 gpt-oss:20b         1         9
+63             1      1       4 gpt-oss:20b         0       100
+64             1      2       4 gpt-oss:20b         1         9
+> design |> nrow()
+[1] 64
+
+[output removed due to one line per progress bar % step]
+
+> 
+> save(sim_results_arousal, file = "sim_results/sim_results_arousal.RData")
+> 
+> proc.time()
+      user     system    elapsed 
+242900.540    194.582 639851.857 

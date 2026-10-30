@@ -1,0 +1,904 @@
+
+R version 4.6.0 (2026-04-24) -- "Because it was There"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ## load packages and simulation results ##
+> ##########################################
+> 
+> ## packages for data loading and analysis
+> library(readxl)
+> library(tidyverse)
+── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.1     ✔ readr     2.2.0
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.3     ✔ tibble    3.3.1
+✔ lubridate 1.9.5     ✔ tidyr     1.3.2
+✔ purrr     1.2.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+> library(ggplot2)
+> library(gtheory)
+Loading required package: lme4
+Loading required package: Matrix
+
+Attaching package: ‘Matrix’
+
+The following objects are masked from ‘package:tidyr’:
+
+    expand, pack, unpack
+
+> library(papaja)
+Loading required package: tinylabels
+> 
+> sessionInfo()
+R version 4.6.0 (2026-04-24)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 24.04.5 LTS
+
+Matrix products: default
+BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.12.0 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=de_DE.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=de_DE.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=de_DE.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=de_DE.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/Berlin
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] papaja_0.1.4     tinylabels_0.2.5 gtheory_0.1.2    lme4_2.0-1      
+ [5] Matrix_1.7-5     lubridate_1.9.5  forcats_1.0.1    stringr_1.6.0   
+ [9] dplyr_1.2.1      purrr_1.2.2      readr_2.2.0      tidyr_1.3.2     
+[13] tibble_3.3.1     ggplot2_4.0.3    tidyverse_2.0.0  readxl_1.4.5    
+
+loaded via a namespace (and not attached):
+ [1] generics_0.1.4     stringi_1.8.7      lattice_0.22-9     effectsize_1.0.2  
+ [5] hms_1.1.4          magrittr_2.0.5     estimability_1.5.1 evaluate_1.0.5    
+ [9] grid_4.6.0         timechange_0.4.0   RColorBrewer_1.1-3 mvtnorm_1.4-0     
+[13] cellranger_1.1.0   scales_1.4.0       reformulas_0.4.4   Rdpack_2.6.6      
+[17] cli_3.6.6          rlang_1.2.0        rbibutils_2.4.1    splines_4.6.0     
+[21] withr_3.0.2        otel_0.2.0         datawizard_1.3.1   tools_4.6.0       
+[25] tzdb_0.5.0         nloptr_2.2.1       minqa_1.2.8        bayestestR_0.18.1 
+[29] boot_1.3-32        vctrs_0.7.3        R6_2.6.1           emmeans_2.0.3     
+[33] lifecycle_1.0.5    MASS_7.3-65        insight_1.5.1      pkgconfig_2.0.3   
+[37] pillar_1.11.1      gtable_0.3.6       glue_1.8.1         Rcpp_1.1.1-1.1    
+[41] xfun_0.57          tidyselect_1.2.1   parameters_0.29.1  knitr_1.51        
+[45] rstudioapi_0.18.0  xtable_1.8-8       farver_2.1.2       nlme_3.1-169      
+[49] compiler_4.6.0     S7_0.2.2          
+> 
+> ## set seed to make all analyses and plots that may contain a random component replicable
+> set.seed(1772625073) # as.numeric(Sys.time()) used for creating the seed
+> 
+> ## load simulation results (depending on the dataset under analysis)
+> construct <- "valence"
+> if (construct == "valence") {
++   load("sim_results/sim_results_valence.RData")
++   results <- sim_results_valence
++   rm(sim_results_valence)
++ } else if (construct == "arousal") {
++   load("sim_results/sim_results_arousal.RData")
++   results <- sim_results_arousal
++   rm(sim_results_arousal)
++ }
+> 
+> head(results)
+  system_prompt format example    models scale_min scale_max iteration
+1             1      1       1 gemma3:4b         0       100         1
+2             1      1       1 gemma3:4b         0       100         1
+3             1      1       1 gemma3:4b         0       100         1
+4             1      1       1 gemma3:4b         0       100         1
+5             1      1       1 gemma3:4b         0       100         1
+6             1      1       1 gemma3:4b         0       100         1
+  stimulus_id rating rating_with_invalid      seed
+1           1     25                  25 251275277
+2           2     15                  15 588502509
+3           3     15                  15 875191604
+4           4     15                  15 549356975
+5           5     35                  35 688332066
+6           6     15                  15  93899130
+> 
+> ## check that files exist
+> file_names <- c(
++   "Evaluation validity valence with human raters on Prolific for R analysis.xlsx",
++   "Evaluation validity arousal with human raters on Prolific for R analysis.xlsx"
++ 
++ )
+> 
+> if (!all(file.exists(file_names))) {
++   stop("To run all analyses, you need to download the files from the following links: https://osf.io/k5a4x/files/cn5g9 and https://osf.io/k5a4x/files/y7bpf")
++ }
+> 
+> 
+> ## definition of helper functions for data analysis ##
+> ######################################################
+> 
+> #' standard error (se)
+> #'
+> #' @param x values for which to compute the standard error
+> #' @returns standard error of x
+> se <- function(x, na.rm = TRUE) {
++   sd(x, na.rm = na.rm) / sqrt(sum(!is.na(x)))
++ }
+> 
+> #' confidence interval (ci) that uses the \code{se} function
+> #'
+> #' @param x values for which to compute the confidence interval bounds
+> #' @returns two values in a vector with the first being the lower and the second
+> #' being the upper bound of the confidence interval for x
+> ci <- function(x) {
++   c(mean(x, na.rm = TRUE) - 1.96 * se(x), mean(x, na.rm = TRUE) + 1.96 * se(x))
++ }
+> 
+> #' extract confidence bounds for correlation coefficient
+> #'
+> #' @param x first variable x
+> #' @param y second variable y
+> #' @returns two values in a vector with the first being the lower and the second
+> #' being the upper bound of the confidence interval for the correlation between x and y
+> cor_conf_bounds <- function(x, y) {
++   test_result <- cor.test(x, y)
++   test_result$conf.int |> as.numeric()
++ }
+> 
+> #' function that rescales the provided input to the range of 0 to 100
+> #'
+> #' @param x values to be rescaled
+> #' @param min theoretical minimum of provided values
+> #' @param max theoretical maximum of provided values
+> #' @returns rescaled vector of \code{x}
+> rescale100 <- function(x, min, max) {
++   (x - min) / (max - min) * 100
++ }
+> 
+> 
+> ## prepare data analysis ##
+> ###########################
+> 
+> ## rename variable containing the LLM ratings so that it can be distinguished later
+> ## from human ratings of the same stimuli
+> results <- results |>
++   rename(
++     "llm_rating" = "rating",
++     "llm_rating_with_invalid" = "rating_with_invalid"
++   )
+> 
+> ## rescale rating variable so that the values lie on a range from 0 to 100
+> ## (this has to be done only for the format with a scale from 1 to 9)
+> results$llm_rating_re <- results$llm_rating
+> results$llm_rating_re[results$format == 2] <- rescale100(
++   results$llm_rating_re[results$format == 2],
++   min = 1,
++   max = 9
++ )
+> 
+> ## convert variables indicating simulation conditions to factors
+> results$format <- factor(results$format, labels = c("0-100", "1-9"))
+> results$example <- factor(results$example, labels = c("none", "lower anchor", "upper anchor", "both anchors"))
+> results$stimulus_factor <- factor(results$stimulus_id)
+> 
+> 
+> ## analyze missing values ##
+> ############################
+> 
+> ## analyze missing values due to LLM errors
+> tapply(results$llm_rating_with_invalid, results$models, function(x) sum(is.na(x)))
+  gemma3:4b  gemma3:12b  gemma3:27b llama3.1:8b   phi3:3.8b    phi3:14b 
+          0           0           0           0           0           1 
+   phi4:14b gpt-oss:20b 
+          0          37 
+> tapply(results$llm_rating_with_invalid, results$models, function(x) mean(is.na(x)))
+   gemma3:4b   gemma3:12b   gemma3:27b  llama3.1:8b    phi3:3.8b     phi3:14b 
+0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00 1.302083e-05 
+    phi4:14b  gpt-oss:20b 
+0.000000e+00 4.817708e-04 
+> 
+> ## analyze remaining missing values (LLM errors and values outside the allowed range) by model
+> tapply(results$llm_rating, results$models, function(x) sum(is.na(x))) -
++   tapply(results$llm_rating_with_invalid, results$models, function(x) sum(is.na(x)))
+  gemma3:4b  gemma3:12b  gemma3:27b llama3.1:8b   phi3:3.8b    phi3:14b 
+          2           0           0         263        2216          43 
+   phi4:14b gpt-oss:20b 
+         40          82 
+> tapply(results$llm_rating, results$models, function(x) mean(is.na(x))) -
++   tapply(results$llm_rating_with_invalid, results$models, function(x) mean(is.na(x)))
+   gemma3:4b   gemma3:12b   gemma3:27b  llama3.1:8b    phi3:3.8b     phi3:14b 
+2.604167e-05 0.000000e+00 0.000000e+00 3.424479e-03 2.885417e-02 5.598958e-04 
+    phi4:14b  gpt-oss:20b 
+5.208333e-04 1.067708e-03 
+> 
+> ## analyze invalid values by response format
+> tapply(results$llm_rating, results$format, function(x) sum(is.na(x))) -
++   tapply(results$llm_rating_with_invalid, results$format, function(x) sum(is.na(x)))
+0-100   1-9 
+ 2451   195 
+> 
+> ## analyze invalid values by example type
+> tapply(results$llm_rating, results$example, function(x) sum(is.na(x))) -
++   tapply(results$llm_rating_with_invalid, results$example, function(x) sum(is.na(x)))
+        none lower anchor upper anchor both anchors 
+         671          230          805          940 
+> 
+> ## total percentage of missings
+> mean(is.na(results$llm_rating))
+[1] 0.00436849
+> 
+> 
+> ## explain variance in LLM ratings ##
+> #####################################
+> 
+> gstudy_results <- gstudy(
++   formula = llm_rating_re ~ (1|stimulus_factor*models*example*format),
++   data = results)
+boundary (singular) fit: see help('isSingular')
+> gstudy_results
+$components
+                                  source          var percent n
+1  stimulus_factor:models:example:format   9.00092847     1.2 1
+2         stimulus_factor:models:example  14.91165391     2.0 1
+3          stimulus_factor:models:format  10.71806563     1.4 1
+4         stimulus_factor:example:format   0.22273846     0.0 1
+5                 stimulus_factor:models  38.82478953     5.1 1
+6                stimulus_factor:example   5.61396451     0.7 1
+7                 stimulus_factor:format   0.05477936     0.0 1
+8                        stimulus_factor 525.24810886    68.8 1
+9                  models:example:format   1.00202658     0.1 1
+10                        models:example  10.12827809     1.3 1
+11                         models:format   5.82007078     0.8 1
+12                        example:format   0.00000000     0.0 1
+13                                models  18.38605130     2.4 1
+14                               example  21.95987512     2.9 1
+15                                format   3.06396711     0.4 1
+16                              Residual  97.94321831    12.8 1
+
+attr(,"class")
+[1] "gstudy" "list"  
+> 
+> dstudy(
++   gstudy_results,
++   colname.objects = "stimulus_factor",
++   colname.scores = "llm_rating_re",
++   data = results |> filter(iteration == 1) # D study with extracted variance components
++ )
+$components
+                                  source          var percent  n
+1  stimulus_factor:models:example:format   0.14063951     0.0 64
+2         stimulus_factor:models:example   0.46598918     0.1 32
+3          stimulus_factor:models:format   0.66987910     0.1 16
+4         stimulus_factor:example:format   0.02784231     0.0  8
+5                 stimulus_factor:models   4.85309869     0.9  8
+6                stimulus_factor:example   1.40349113     0.3  4
+7                 stimulus_factor:format   0.02738968     0.0  2
+8                        stimulus_factor 525.24810886    96.5  1
+9                  models:example:format   0.01565667     0.0 64
+10                        models:example   0.31650869     0.1 32
+11                         models:format   0.36375442     0.1 16
+12                        example:format   0.00000000     0.0  8
+13                                models   2.29825641     0.4  8
+14                               example   5.48996878     1.0  4
+15                                format   1.53198356     0.3  2
+16                              Residual   1.53036279     0.3 64
+
+$var.universe
+[1] 525.2481
+
+$generalizability
+[1] 0.9829355
+
+$var.error.rel
+[1] 9.118692
+
+$sem.rel
+[1] 3.019717
+
+$see.rel
+[1] 2.993841
+
+$dependability
+[1] 0.9648504
+
+$var.error.abs
+[1] 19.13482
+
+$sem.abs
+[1] 4.374337
+
+$see.abs
+[1] 4.296771
+
+attr(,"class")
+[1] "dstudy" "list"  
+> 
+> # D study with extracted variance components but include information about iterations
+> dstudy(
++   gstudy_results,
++   colname.objects = "stimulus_factor",
++   colname.scores = "llm_rating_re",
++   data = results
++ )
+$components
+                                  source          var percent    n
+1  stimulus_factor:models:example:format   0.14063951     0.0   64
+2         stimulus_factor:models:example   0.46598918     0.1   32
+3          stimulus_factor:models:format   0.66987910     0.1   16
+4         stimulus_factor:example:format   0.02784231     0.0    8
+5                 stimulus_factor:models   4.85309869     0.9    8
+6                stimulus_factor:example   1.40349113     0.3    4
+7                 stimulus_factor:format   0.02738968     0.0    2
+8                        stimulus_factor 525.24810886    96.8    1
+9                  models:example:format   0.01565667     0.0   64
+10                        models:example   0.31650869     0.1   32
+11                         models:format   0.36375442     0.1   16
+12                        example:format   0.00000000     0.0    8
+13                                models   2.29825641     0.4    8
+14                               example   5.48996878     1.0    4
+15                                format   1.53198356     0.3    2
+16                              Residual   0.01531559     0.0 6395
+
+$var.universe
+[1] 525.2481
+
+$generalizability
+[1] 0.9857303
+
+$var.error.rel
+[1] 7.603645
+
+$sem.rel
+[1] 2.757471
+
+$see.rel
+[1] 2.737726
+
+$dependability
+[1] 0.9675432
+
+$var.error.abs
+[1] 17.61977
+
+$sem.abs
+[1] 4.197591
+
+$see.abs
+[1] 4.128909
+
+attr(,"class")
+[1] "dstudy" "list"  
+> 
+> # D study but with only each condition per facet (n = 1 design)
+> dstudy(
++   gstudy_results,
++   colname.objects = "stimulus_factor",
++   colname.scores = "llm_rating_re",
++   data = results |> # select arbitrary n = 1 configuration
++     filter(iteration == 1 & models == "gemma3:4b" & format == "1-9" & example == "none")
++ )
+$components
+                                  source          var percent n
+1  stimulus_factor:models:example:format   9.00092847     1.2 1
+2         stimulus_factor:models:example  14.91165391     2.0 1
+3          stimulus_factor:models:format  10.71806563     1.4 1
+4         stimulus_factor:example:format   0.22273846     0.0 1
+5                 stimulus_factor:models  38.82478953     5.1 1
+6                stimulus_factor:example   5.61396451     0.7 1
+7                 stimulus_factor:format   0.05477936     0.0 1
+8                        stimulus_factor 525.24810886    68.8 1
+9                  models:example:format   1.00202658     0.1 1
+10                        models:example  10.12827809     1.3 1
+11                         models:format   5.82007078     0.8 1
+12                        example:format   0.00000000     0.0 1
+13                                models  18.38605130     2.4 1
+14                               example  21.95987512     2.9 1
+15                                format   3.06396711     0.4 1
+16                              Residual  97.94321831    12.8 1
+
+$var.universe
+[1] 525.2481
+
+$generalizability
+[1] 0.7476434
+
+$var.error.rel
+[1] 177.2901
+
+$sem.rel
+[1] 13.31503
+
+$see.rel
+[1] 11.51303
+
+$dependability
+[1] 0.6884901
+
+$var.error.abs
+[1] 237.6504
+
+$sem.abs
+[1] 15.41591
+
+$see.abs
+[1] 12.7914
+
+attr(,"class")
+[1] "dstudy" "list"  
+> 
+> 
+> ## combine simulation results with human ratings ##
+> ###################################################
+> 
+> if (construct == "valence") {
++   data <- read_excel("Evaluation validity valence with human raters on Prolific for R analysis.xlsx")
++ } else if (construct == "arousal") {
++   data <- read_excel("Evaluation validity arousal with human raters on Prolific for R analysis.xlsx")
++ }
+> 
+> data <- as.data.frame(data)
+> data[, 10:105] <- sapply(data[, 10:105], as.numeric)
+> 
+> ## transform human data into a row-wise format for the statements
+> human_ratings <- data.frame(
++   stimulus_id = 1:96,
++   human_rating = colMeans(data[, 10:105])
++ )
+> 
+> ## join simulation results with human ratings
+> results <- results |>
++   left_join(human_ratings, by = "stimulus_id")
+> 
+> 
+> 
+> ## evaluate inter-rater reliability in human ratings ##
+> #######################################################
+> 
+> ## conduct generalizability theory analysis for human ratings
+> raw_human_ratings <- data[, 10:105]
+> n_human <- nrow(raw_human_ratings)
+> 
+> human_ratings_long <- raw_human_ratings |>
++   mutate(rater = 1:n_human) |>
++   pivot_longer(cols = all_of(colnames(raw_human_ratings)), names_to = "stimulus", values_to = "rating")
+> 
+> g <- gstudy(data = human_ratings_long, formula = rating ~ (1|rater) + (1|stimulus))
+> g
+$components
+    source        var percent n
+1 stimulus 1.70446097    59.7 1
+2    rater 0.02169865     0.8 1
+3 Residual 1.13081871    39.6 1
+
+attr(,"class")
+[1] "gstudy" "list"  
+> g$components$var / sum(g$components$var) # to avoid rounding
+[1] 0.596595694 0.007594964 0.395809342
+> 
+> ## compute generalizability and dependability coefficients
+> item_var <- g$components$percent[g$components$source == "stimulus"]
+> person_var <- g$components$percent[g$components$source == "rater"]
+> resid_var <- g$components$percent[g$components$source == "Residual"]
+> 
+> item_var / (item_var + resid_var / n_human) # generalizability coefficient
+[1] 0.960193
+> item_var / (item_var + person_var / n_human + resid_var / n_human) # dependability coefficient
+[1] 0.9594215
+> 
+> 
+> ## evaluate correlations of LLM ratings with human ratings ##
+> #############################################################
+> 
+> ## define color theme for models for all plots
+> colors <- c(rep("purple", 3), "orange", rep("skyblue", 3), "#69b3a2")
+> stopifnot(length(colors) == length(levels(results$models)))
+> 
+> aggregated_results <- results |>
++   ## conduct analysis across iterations for each condition
++   group_by(models, format, example, iteration) |>
++   ## compute correlation between human and LLM ratings
++   summarize(
++     cor = cor.test(llm_rating_re, human_rating)$estimate,
++     cor_uncertainty_lower = cor_conf_bounds(llm_rating_re, human_rating)[1],
++     cor_uncertainty_upper = cor_conf_bounds(llm_rating_re, human_rating)[2]
++   ) |>
++   ungroup() |>
++   ## aggregate correlation statistics across simulation conditions
++   group_by(models, format, example) |>
++   summarize(
++     correlation = mean(cor, na.rm = TRUE),
++     cor_lb = ci(cor)[1],
++     cor_ub = ci(cor)[2],
++     cor_uncertainty_lower = mean(cor_uncertainty_lower),
++     cor_uncertainty_upper = mean(cor_uncertainty_upper)
++   )
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by models, format, example, and iteration.
+ℹ Output is grouped by models, format, and example.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(models, format, example, iteration))` for
+  per-operation grouping (`?dplyr::dplyr_by`) instead.
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by models, format, and example.
+ℹ Output is grouped by models and format.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(models, format, example))` for per-operation grouping
+  (`?dplyr::dplyr_by`) instead.
+> 
+> ggplot(aggregated_results, aes(x = models, y = correlation, col = models)) +
++   theme_apa() +
++   geom_tile(
++     data = aggregated_results,
++     aes(
++       x = models,
++       y = (cor_uncertainty_lower + cor_uncertainty_upper) / 2,
++       height = cor_uncertainty_upper - cor_uncertainty_lower,
++       width = 0.7
++     ),
++     inherit.aes = FALSE,
++     fill = "grey",
++     alpha = 0.4
++   ) +
++   geom_abline(intercept = c(0.2, 0.4, 0.6, 0.8), slope = 0, linetype = "solid", linewidth = 0.5, color = "grey") +
++   geom_point(size = 4) +
++   geom_errorbar(aes(ymin = cor_lb, ymax = cor_ub), width = 0.5, linewidth = 0.8) +
++   scale_y_continuous(
++     name = "correlation between human and LLM ratings",
++     limits = c(0,1),
++     breaks = seq(0.2, 1, by = 0.2),
++     labels = scales::number_format(accuracy = 0.01),
++     expand = FALSE
++   ) +
++   facet_grid(format ~ example, labeller = label_both) +
++   theme(legend.position = "bottom") +
++   scale_color_manual(values = colors) +
++   theme(axis.text.x = element_text(angle = 90, hjust = 1), text = element_text(size = 22)) +
++   geom_abline(intercept = 0, slope = 0, linetype = "solid") +
++   geom_abline(intercept = 1, slope = 0, linetype = "solid") +
++   geom_abline(intercept = ifelse(construct == "valence", 0.95, 0.92), slope = 0, linetype = "dashed", alpha = 0.5)
+> 
+> ggsave(paste0("sim_results/", construct, "_human_llm_correlations.pdf"), dpi = 600, width = 15, height = 12)
+> write.csv(aggregated_results, paste0("sim_results/correlations_", construct, ".csv"), row.names = FALSE)
+> 
+> ## split-half analysis by stimuli ##
+> ##--------------------------------##
+> 
+> bootstrap_config_cors <- function(df, n_boot = 1000, seed = NULL) {
++   if (!is.null(seed)) set.seed(seed)
++   stim <- levels(droplevels(df$stimulus_factor))
++   n_items <- length(stim)
++   df <- df |>
++     select(models, format, example, iteration,
++            stimulus_factor, llm_rating_re, human_rating)
++ 
++   out <- vector("list", n_boot)
++   for (i in seq_len(n_boot)) {
++     ## random split of the stimuli
++     s_levels <- sample(stim, size = floor(n_items / 2))
++ 
++     ## per-iteration correlation in each half, then average per condition
++     stats <- df |>
++       mutate(half = if_else(stimulus_factor %in% s_levels, "a", "b")) |>
++       group_by(models, format, example, iteration, half) |>
++       summarize(cor = cor(llm_rating_re, human_rating, use = "complete.obs"),
++                 .groups = "drop") |>
++       group_by(models, format, example, half) |>
++       summarize(cor = mean(cor, na.rm = TRUE), .groups = "drop") |>
++       pivot_wider(names_from = half, values_from = cor)
++ 
++     ## stability of the 64 averaged correlations between halves
++     out[[i]] <- tibble(
++       boot     = i,
++       pearson  = cor(stats$a, stats$b, use = "complete.obs"),
++       spearman = cor(stats$a, stats$b, method = "spearman", use = "complete.obs")
++     )
++   }
++   bind_rows(out) |> as.data.frame()
++ }
+> 
+> split_half_cors <- bootstrap_config_cors(results, n_boot = 1000)
+> spearman_brown <- function(r) 2 * r / (1 + r)
+> split_half_cors |>
++   summarize(
++     across(c(pearson, spearman),
++            list(mean = mean,
++                 q025 = ~ quantile(.x, 0.025),
++                 q975 = ~ quantile(.x, 0.975))),
++     pearson_full  = spearman_brown(pearson_mean),
++     spearman_full = spearman_brown(spearman_mean)
++   )
+  pearson_mean pearson_q025 pearson_q975 spearman_mean spearman_q025
+1    0.9485483    0.9018032    0.9756337     0.9046803     0.8344517
+  spearman_q975 pearson_full spearman_full
+1     0.9485531    0.9735948      0.949955
+> 
+> 
+> ## scatter plot: human and best LLM ratings ##
+> ##------------------------------------------##
+> 
+> best_idx <- which.max(aggregated_results$correlation)
+> best_row <- aggregated_results[best_idx, ]
+> best_row
+# A tibble: 1 × 8
+# Groups:   models, format [1]
+  models      format example     correlation cor_lb cor_ub cor_uncertainty_lower
+  <fct>       <fct>  <fct>             <dbl>  <dbl>  <dbl>                 <dbl>
+1 gpt-oss:20b 1-9    upper anch…       0.917  0.915  0.920                 0.878
+# ℹ 1 more variable: cor_uncertainty_upper <dbl>
+> 
+> results |>
++   group_by(format, example, models, stimulus_id) |>
++   summarize(
++     human_rating = mean(human_rating),
++     llm_rating = mean(llm_rating, na.rm = TRUE)
++   ) |>
++   filter(format == best_row$format & example == best_row$example & models == best_row$models) |>
++   ggplot(aes(x = human_rating, y = llm_rating)) +
++   theme_apa() +
++   geom_point() +
++   geom_smooth(method = "lm", color = "red", fill = "salmon", level = 0.95) +
++   scale_x_continuous(name = paste0("Average human rating of ", construct), limits = c(1,7), breaks = 1:7) +
++   scale_y_continuous(name = paste0("Average LLM rating of ", construct), limits = c(0,9), breaks = 1:9) +
++   theme(text = element_text(size = 15))
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by format, example, models, and stimulus_id.
+ℹ Output is grouped by format, example, and models.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(format, example, models, stimulus_id))` for
+  per-operation grouping (`?dplyr::dplyr_by`) instead.
+`geom_smooth()` using formula = 'y ~ x'
+> 
+> ggsave(paste0("sim_results/", construct, "_scatter_plot_human_best_llm.pdf"), dpi = 600, width = 10,height = 7)
+`geom_smooth()` using formula = 'y ~ x'
+> 
+> 
+> 
+> ## assess correlation by number of estimates per stimulus (iterations) ##
+> ##---------------------------------------------------------------------##
+> 
+> #' function repeatedly computes mean LLM ratings across different numbers of iterations of the simulation
+> #'
+> #' @param input results data frame from simulation containing LLM ratings for each stimulus for each simulation iteration
+> #' @param repetitions number of times this analysis will be repeated
+> #' @returns data frame that contains mean LLM-generated ratings of valence/arousal
+> #' for different orders of aggregation (number of randomly drawn simulation iterations
+> #' of the same valence/arousal rating in the respective condition).
+> #' For the sake of completeness, the data frame also contains mean human ratings of statements.
+> get_aggregated_ratings <- function(input, repetitions) {
++   ## function requires the variables format, example, models, stimulus_id, and iteration
++   ## and llm_rating_re to be defined in input data frame (function tailored to this analysis)
++   output <- NULL
++   for (i in 1:repetitions) {
++     suppressMessages(
++       stats <- input |>
++         group_by(format, example, models, stimulus_id) |>
++         summarize(
++           human_rating = mean(human_rating), # always the same across iterations of simulation because it is never varied
++           llm_mean_complete =  mean(sample(llm_rating_re, size = 100, replace = TRUE), na.rm = TRUE),
++           llm_mean_50 = mean(sample(llm_rating_re, size = 50, replace = TRUE), na.rm = TRUE),
++           llm_mean_25 = mean(sample(llm_rating_re, size = 25, replace = TRUE), na.rm = TRUE),
++           llm_mean_10 = mean(sample(llm_rating_re, size = 10, replace = TRUE), na.rm = TRUE),
++           llm_mean_05 = mean(sample(llm_rating_re, size = 5, replace = TRUE), na.rm = TRUE),
++           llm_mean_01 = mean(sample(llm_rating_re, size = 1, replace = TRUE), na.rm = TRUE)
++         )
++     )
++     stats$repetition <- factor(i)
++     output <- rbind(output, stats)
++   }
++   output
++ }
+> 
+> ## aggregate across ratings of the same models across different numbers of simulation iterations
+> item_order_stats <- get_aggregated_ratings(results, repetitions = 100)
+> item_order_stats
+# A tibble: 614,400 × 12
+# Groups:   format, example, models [64]
+   format example models  stimulus_id human_rating llm_mean_complete llm_mean_50
+   <fct>  <fct>   <fct>         <int>        <dbl>             <dbl>       <dbl>
+ 1 0-100  none    gemma3…           1         1.44             25.9        26.2 
+ 2 0-100  none    gemma3…           2         1.75              6.44        7.04
+ 3 0-100  none    gemma3…           3         1.94             18.1        19.2 
+ 4 0-100  none    gemma3…           4         1.62             15.0        14.9 
+ 5 0-100  none    gemma3…           5         2                33.5        33.8 
+ 6 0-100  none    gemma3…           6         1.88             14.8        14.9 
+ 7 0-100  none    gemma3…           7         1.81             14.7        14.9 
+ 8 0-100  none    gemma3…           8         1.5              25.3        26   
+ 9 0-100  none    gemma3…           9         1.44             10.2        10.2 
+10 0-100  none    gemma3…          10         2.62             24.8        25   
+# ℹ 614,390 more rows
+# ℹ 5 more variables: llm_mean_25 <dbl>, llm_mean_10 <dbl>, llm_mean_05 <dbl>,
+#   llm_mean_01 <dbl>, repetition <fct>
+> 
+> ## compute correlation between human-generated and LLM-generated statements for
+> ## different orders of aggregation
+> cor_order_stats <- item_order_stats |>
++   pivot_longer(
++     cols = matches("llm_mean"),
++     names_to = "draws",
++     values_to = "llm_rating_re"
++   ) |>
++   mutate(
++     draws =
++       factor(
++         draws,
++         levels = c("llm_mean_01", "llm_mean_05", "llm_mean_10", "llm_mean_25", "llm_mean_50", "llm_mean_complete"),
++         labels = c("1", "5", "10", "25", "50", "100")
++       )
++   ) |>
++   ## compute correlation of human and LLM ratings
++   group_by(format, example, models, draws, repetition) |>
++   summarize(
++     cor = cor.test(human_rating, llm_rating_re)$estimate
++   ) |>
++   ## finally, aggregate correlations for each simulation condition across repetitions
++   group_by(format, example, models, draws) |>
++   summarize(
++     correlation = mean(cor),
++     cor_lb = ci(cor)[1],
++     cor_ub = ci(cor)[2]
++   )
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by format, example, models, draws, and
+  repetition.
+ℹ Output is grouped by format, example, models, and draws.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(format, example, models, draws, repetition))` for
+  per-operation grouping (`?dplyr::dplyr_by`) instead.
+`summarise()` has regrouped the output.
+ℹ Summaries were computed grouped by format, example, models, and draws.
+ℹ Output is grouped by format, example, and models.
+ℹ Use `summarise(.groups = "drop_last")` to silence this message.
+ℹ Use `summarise(.by = c(format, example, models, draws))` for per-operation
+  grouping (`?dplyr::dplyr_by`) instead.
+> 
+> cor_order_stats |>
++   filter(format == "1-9" & example == "both anchors") |>
++   ggplot(aes(x = draws, y = correlation, col = models, group = 1)) +
++   theme_apa() +
++   geom_abline(intercept = c(0.6, 0.8), slope = 0, linetype = "solid", linewidth = 0.5, color = "grey") +
++   geom_point(size = 5) +
++   geom_line(linewidth = 1) +
++   geom_errorbar(aes(ymin = cor_lb, ymax = cor_ub), width = 0.6) +
++   scale_x_discrete(
++     expression(n["est"])
++   ) +
++   scale_y_continuous(
++     name = "correlation between human and LLM ratings",
++     limits = c(ifelse(construct == "valence", 0.5, 0.4),1),
++     breaks = seq(0.5, 1, by = 0.1),
++     labels = scales::number_format(accuracy = 0.01),
++     expand = FALSE
++   ) +
++   facet_grid(~models) +
++   scale_color_manual(values = colors) +
++   geom_abline(intercept = 1, slope = 0, linetype = "solid", alpha = 1) +
++   geom_abline(intercept = ifelse(construct == "valence", 0.95, 0.92), slope = 0, linetype = "dashed", alpha = 0.5) +
++   theme(text = element_text(size = 20), legend.position = "none", axis.title = element_text(size = 32), strip.text.x = element_text(size = 26))
+> 
+> ggsave(paste0("sim_results/", construct, "_human_llm_correlations_by_aggregation.pdf"), dpi = 600, width = 20, height = 15)
+> 
+> 
+> ## overall best performance including aggregation procedures ##
+> ##-----------------------------------------------------------##
+> 
+> best_idx_aggregated <- which.max(cor_order_stats$correlation)
+> best_cor_aggregated <- cor_order_stats[best_idx_aggregated, ]
+> best_cor_aggregated
+# A tibble: 1 × 7
+# Groups:   format, example, models [1]
+  format example      models      draws correlation cor_lb cor_ub
+  <fct>  <fct>        <fct>       <fct>       <dbl>  <dbl>  <dbl>
+1 1-9    both anchors gpt-oss:20b 100         0.954  0.954  0.954
+> 
+> 
+> ## compare valence and arousal results ##
+> #########################################
+> 
+> correlations_valence <- read.csv("sim_results/correlations_valence.csv")
+> correlations_arousal <- read.csv("sim_results/correlations_arousal.csv")
+> 
+> cor.test(correlations_valence$correlation, correlations_arousal$correlation)
+
+	Pearson's product-moment correlation
+
+data:  correlations_valence$correlation and correlations_arousal$correlation
+t = 7.3962, df = 62, p-value = 4.422e-10
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.5276362 0.7964248
+sample estimates:
+      cor 
+0.6846481 
+
+> cor.test(correlations_valence$correlation, correlations_arousal$correlation, method = "spearman")
+
+	Spearman's rank correlation rho
+
+data:  correlations_valence$correlation and correlations_arousal$correlation
+S = 18330, p-value = 8.486e-07
+alternative hypothesis: true rho is not equal to 0
+sample estimates:
+      rho 
+0.5803571 
+
+> 
+> all_correlations <- correlations_valence
+> all_correlations <- all_correlations |> rename("correlation_valence" = "correlation")
+> all_correlations$correlation_arousal <- correlations_arousal$correlation
+> 
+> all_correlations <- all_correlations |>
++   mutate(
++     models = factor(models, levels = unique(models))
++   )
+> 
+> ggplot(all_correlations, aes(x = correlation_valence, y = correlation_arousal, col = models, shape = models)) +
++   theme_apa() +
++   geom_point() +
++   geom_smooth(aes(group = NA), method = "lm", fill = "grey", color = "black", linetype = "dashed", linewidth = 1) +
++   geom_abline(aes(intercept = 0, slope = 1)) +
++   scale_color_manual(values = colors) +
++   scale_x_continuous(
++     name = "correlations between human and LLM ratings (valence)",
++     limits = c(0.3, 1),
++     breaks = c(0.2, 0.4, 0.6, 0.8, 1),
++     labels = scales::number_format(accuracy = 0.01)
++   ) +
++   scale_y_continuous(
++     name = "correlations between human and LLM ratings (arousal)",
++     limits = c(0.3, 1),
++     breaks = c(0.2, 0.4, 0.6, 0.8, 1),
++     labels = scales::number_format(accuracy = 0.01)
++   ) +
++   scale_color_manual(
++     name = "models",
++     labels = levels(all_correlations$models),
++     values = colors
++   ) +
++   scale_shape_manual(
++     name = "models",
++     labels = levels(all_correlations$models),
++     values = c(19, 15, 17, 19, 19, 15, 17, 19)
++   ) +
++   theme(text = element_text(size = 15))
+Scale for colour is already present.
+Adding another scale for colour, which will replace the existing scale.
+`geom_smooth()` using formula = 'y ~ x'
+Warning message:
+The following aesthetics were dropped during statistical transformation: shape.
+ℹ This can happen when ggplot fails to infer the correct grouping structure in
+  the data.
+ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
+  variable into a factor? 
+> 
+> ggsave(paste0("sim_results/", "valence_arousal_comparison.pdf"), dpi = 600, width = 12, height = 9)
+`geom_smooth()` using formula = 'y ~ x'
+Warning message:
+The following aesthetics were dropped during statistical transformation: shape.
+ℹ This can happen when ggplot fails to infer the correct grouping structure in
+  the data.
+ℹ Did you forget to specify a `group` aesthetic or to convert a numerical
+  variable into a factor? 
+> 
+> proc.time()
+    user   system  elapsed 
+2033.414  426.422 2460.136 
